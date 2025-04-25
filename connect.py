@@ -67,11 +67,13 @@ def welcome():
         
         elif selection == '3':
             update()
+            menu()
             break
 
         elif selection == '4':
             delete()
-            # break
+            menu()
+            break
         
         else:
             cursor.close()
@@ -112,7 +114,8 @@ def create():
             name = input('\nEnter company name: ').title()
             cursor.execute(f'INSERT INTO companies (name) VALUES (%s)', [ name ])
             connection.commit()
-            print(f'Successfully added { name } to the list of companies.')
+            clear()
+            print(f'Successfully added { name } to the list of companies.\n')
             
         else:
             welcome()
