@@ -4,6 +4,7 @@ import pandas
 
 
 
+
 # Companies
 #  id | name | number_of_employees 
 # ----+------+---------------------
@@ -18,6 +19,8 @@ import pandas
 
 connection = psycopg2.connect(database="crm")
 cursor = connection.cursor()
+
+
 
 
 def clear():
@@ -67,7 +70,7 @@ def welcome():
             break
 
         elif selection == '4':
-            print('4')
+            delete()
             # break
         
         else:
@@ -101,7 +104,6 @@ def create():
             name = input('\nPlease enter customer name: ').title()
             company_name = input(f'Name of company { name } is employed with: ').title()
             cursor.execute(f'INSERT INTO employees (name, company_name) VALUES (%s, %s)', [ name, company_name ])
-            cursor.execute(f'INSERT INTO companies (name) VALUES (%s)', [ company_name ])
             connection.commit()
             clear()
             print(f'Successfully added { name } to the list of employees.\n')
@@ -122,14 +124,14 @@ def create():
 # Read
 def read():
     clear()
-    cursor.execute('SELECT employees.name AS employee_name, employees.id AS employee_id, employees.company_name, companies.id AS company_id,COUNT(employees.id) OVER (PARTITION BY employees.company_name) AS number_of_employees FROM employees LEFT JOIN companies ON employees.company_name = companies.name;')
+    cursor.execute('SELECT employees.id AS employee_id, employees.name AS employee_name, employees.company_name, companies.id AS company_id,COUNT(employees.id) OVER (PARTITION BY employees.company_name) AS number_of_employees FROM employees LEFT JOIN companies ON employees.company_name = companies.name;')
     connection.commit()
     
     rows = cursor.fetchall()
     columns = [desc[0] for desc in cursor.description]
     dataframe = pandas.DataFrame(rows, columns=columns)
     
-    print(f'\n{dataframe}')
+    print(f'\n{ dataframe.to_string(index=False) }')
 
 
 
@@ -150,9 +152,14 @@ def update():
 
 
 # Delete
-# id = input('input customer id')
-# cursor.execute('DELETE FROM employees WHERE id = %s', [id])
-# connection.commit()
+def delete():
+    read()
+    print('\nWho would you like to delete?')
+    id = input('Input customer id: ')
+    cursor.execute('DELETE FROM employees WHERE id = %s', [id])
+    connection.commit()
+    clear()
+    print(f'Successfully deleted customer.')
 
 
 
