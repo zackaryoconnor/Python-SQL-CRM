@@ -1,6 +1,6 @@
 import psycopg2
 import os, sys
-
+import pandas
 
 
 
@@ -26,10 +26,12 @@ def clear():
 def menu():
     while True:
         selection = input('\nPress \'e\' to exit to the menu.')
+        
         if selection != 'e':
             print('Please select a valid option.\n')
         else:
             welcome()
+            break
 
 
 
@@ -37,7 +39,7 @@ def menu():
 def welcome():
     clear()
     while True:
-        selection = input('Please select and option:\n\n'  
+        selection = input('Please select an option:\n\n'  
                         '1. Add customer\n'
                         '2. View all customers\n'
                         '3. Update an existing customer\n'
@@ -49,20 +51,25 @@ def welcome():
         if selection not in ['1', '2', '3', '4', 'q']:
             clear()
             print('Please select a valid option.\n')
+        
         elif selection == '1':
             print('Option 1')
             create()
             break
+        
         elif selection == '2':
-            print('Option 2')
             read()
+            menu()
             break
+        
         elif selection == '3':
-            print('Option 3')
+            update()
             break
+
         elif selection == '4':
-            print('Option 4')
-            break
+            print('4')
+            # break
+        
         else:
             cursor.close()
             connection.close()
@@ -79,7 +86,7 @@ def create():
     while True:
         selection = input(
                         'What would you like to add?\n'
-                        'Please select and option:\n\n'  
+                        'Please select an option:\n\n'  
                         '1. Employee\n'
                         '2. Company\n'
                         'e. Exit to menu\n\n'
@@ -114,24 +121,40 @@ def create():
 
 # Read
 def read():
-    cursor.execute('SELECT employees.name AS employee_name, employees.company_name, companies.id AS company_id FROM employees LEFT JOIN companies ON employees.company_name = companies.name')
+    clear()
+    cursor.execute('SELECT employees.name AS employee_name, employees.id AS employee_id, employees.company_name, companies.id AS company_id,COUNT(employees.id) OVER (PARTITION BY employees.company_name) AS number_of_employees FROM employees LEFT JOIN companies ON employees.company_name = companies.name;')
     connection.commit()
-    print(cursor.fetchall())
-    menu()
+    
+    rows = cursor.fetchall()
+    columns = [desc[0] for desc in cursor.description]
+    dataframe = pandas.DataFrame(rows, columns=columns)
+    
+    print(f'\n{dataframe}')
+
+
 
 
 # Update
-# name = input('Update name')
-# employer = input('Update employer')
-# id = input('input customer id')
-# cursor.execute('UPDATE employees SET name = %s, employer = %s WHERE id = %s', [name, employer, id])
-# connection.commit()
+def update():
+    read()
+    print('\nWho would you like to update?')
+    id = input('Input customer id: ')
+    updated_name = input('Update customer name: ').title()
+    updated_company_name = input('Update customer employer: ').title()
+    cursor.execute('UPDATE employees SET name = %s, company_name = %s WHERE id = %s', [ updated_name, updated_company_name, id ])
+    connection.commit()
+    clear()
+    print(f'Successfully updated { updated_name }\'s details.')
+
+
 
 
 # Delete
 # id = input('input customer id')
 # cursor.execute('DELETE FROM employees WHERE id = %s', [id])
 # connection.commit()
+
+
 
 
 welcome()
